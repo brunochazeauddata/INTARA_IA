@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💖 INTARA — Assistante IA</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+    :root {
+      --pink-light: #fce4ec;
+      --pink: #f48fb1;
+      --pink-mid: #ec407a;
+      --pink-dark: #c2185b;
+      --purple-soft: #e1bee7;
+      --purple: #ce93d8;
+      --lavender: #f3e5f5;
+      --bg: #fdf2f8;
+      --white: #ffffff;
+      --text-dark: #4a1942;
+      --text-mid: #6d3a6d;
+      --text-light: #9c669c;
+      --shadow-sm: 0 2px 8px rgba(194, 24, 91, 0.08);
+      --shadow-md: 0 4px 20px rgba(194, 24, 91, 0.12);
+      --shadow-lg: 0 8px 40px rgba(194, 24, 91, 0.18);
+      --radius: 20px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: var(--bg);
+      color: var(--text-dark);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .bg-decor {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .bg-decor .blob {
+      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.35;
+      animation: float 18s ease-in-out infinite alternate;
+    }
+    .bg-decor .blob:nth-child(1) { width: 500px; height: 500px; background: var(--pink); top: -10%; left: -10%; }
+    .bg-decor .blob:nth-child(2) { width: 400px; height: 400px; background: var(--purple); bottom: -10%; right: -10%; animation-delay: -6s; }
+    .bg-decor .blob:nth-child(3) { width: 300px; height: 300px; background: #ffcc80; top: 50%; left: 60%; animation-delay: -12s; }
+
+    @keyframes float {
+      0%   { transform: translate(0, 0) scale(1); }
+      50%  { transform: translate(40px, -30px) scale(1.08); }
+      100% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    .app {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; height: 100vh; max-width: 800px; margin: 0 auto;
+    }
+
+    .header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 24px;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(244,143,177,0.2);
+      box-shadow: var(--shadow-sm);
+    }
+    .header-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: white;
+      box-shadow: 0 2px 12px rgba(236,64,122,0.3); flex-shrink: 0;
+    }
+    .header-info h1 {
+      font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-info p { font-size: 12px; color: var(--text-light); font-weight: 500; }
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%; background: #4caf50;
+      margin-left: auto; box-shadow: 0 0 8px rgba(76,175,80,0.5); flex-shrink: 0;
+    }
+    .status-dot.disconnected { background: #ff9800; box-shadow: 0 0 8px rgba(255,152,0,0.5); }
+    .btn-icon {
+      background: none; border: none; font-size: 20px; cursor: pointer;
+      padding: 6px; border-radius: 50%; transition: background 0.2s; color: var(--text-mid);
+    }
+    .btn-icon:hover { background: rgba(244,143,177,0.15); }
+
+    .messages {
+      flex: 1; overflow-y: auto; padding: 24px 20px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .messages::-webkit-scrollbar { width: 5px; }
+    .messages::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 10px; }
+
+    .message {
+      display: flex; gap: 10px; max-width: 82%;
+      animation: msgIn 0.35s ease-out;
+    }
+    @keyframes msgIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+    .message-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0; margin-top: 2px;
+    }
+    .message.assistant .message-avatar { background: linear-gradient(135deg, var(--pink-mid), var(--purple)); color: white; }
+    .message.user .message-avatar { background: linear-gradient(135deg, #90caf9, #ba68c8); color: white; }
+
+    .message-bubble {
+      padding: 14px 18px; border-radius: var(--radius);
+      font-size: 14.5px; line-height: 1.65; word-wrap: break-word;
+    }
+    .message.assistant .message-bubble {
+      background: var(--white); border: 1px solid rgba(244,143,177,0.15);
+      border-top-left-radius: 4px; box-shadow: var(--shadow-sm); color: var(--text-dark);
+    }
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, var(--pink-mid), #ab47bc);
+      color: white; border-top-right-radius: 4px;
+      box-shadow: 0 4px 16px rgba(236,64,122,0.25);
+    }
+    .message-bubble code { background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 5px; font-size: 13px; font-family: 'Courier New', monospace; }
+    .message.user .message-bubble code { background: rgba(255,255,255,0.2); }
+    .message-bubble pre { background: rgba(0,0,0,0.06); padding: 12px; border-radius: 10px; overflow-x: auto; margin: 8px 0; font-size: 13px; }
+    .message-bubble pre code { background: none; padding: 0; }
+
+    .typing { display: flex; gap: 5px; padding: 4px 0; align-items: center; }
+    .typing span {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--pink);
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .welcome {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center; padding: 40px 20px; flex: 1;
+    }
+    .welcome-icon { font-size: 56px; margin-bottom: 16px; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    .welcome h2 {
+      font-family: 'Playfair Display', serif; font-size: 28px;
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 8px;
+    }
+    .welcome p { color: var(--text-light); font-size: 15px; max-width: 340px; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; justify-content: center; }
+    .suggestion-chip {
+      background: var(--white); border: 1.5px solid var(--pink); color: var(--pink-mid);
+      padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.25s; font-family: 'Quicksand', sans-serif;
+    }
+    .suggestion-chip:hover { background: var(--pink-mid); color: white; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+    .input-area {
+      padding: 16px 20px 20px;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(244,143,177,0.15);
+    }
+    .input-row {
+      display: flex; align-items: flex-end; gap: 10px;
+      background: var(--white); border: 2px solid rgba(244,143,177,0.25);
+      border-radius: 50px; padding: 6px 6px 6px 22px;
+      box-shadow: var(--shadow-md); transition: border-color 0.3s;
+    }
+    .input-row:focus-within { border-color: var(--pink-mid); box-shadow: var(--shadow-lg), 0 0 0 3px rgba(236,64,122,0.12); }
+    .input-row textarea {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-family: 'Quicksand', sans-serif; font-size: 15px; color: var(--text-dark);
+      resize: none; max-height: 120px; line-height: 1.5; padding: 8px 0;
+    }
+    .input-row textarea::placeholder { color: var(--text-light); }
+    .btn-send {
+      width: 48px; height: 48px; border-radius: 50%; border: none;
+      background: linear-gradient(135deg, var(--pink-mid), #ab47bc);
+      color: white; font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.25s; flex-shrink: 0;
+      box-shadow: 0 3px 12px rgba(236,64,122,0.3);
+    }
+    .btn-send:hover { transform: scale(1.08); box-shadow: 0 5px 20px rgba(236,64,122,0.4); }
+    .btn-send:active { transform: scale(0.95); }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(74,25,66,0.4); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal {
+      background: var(--white); border-radius: 24px; padding: 36px 32px 28px;
+      width: 92%; max-width: 460px; box-shadow: var(--shadow-lg);
+      animation: slideUp 0.35s ease-out;
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal h2 {
+      font-family: 'Playfair Display', serif; font-size: 24px; text-align: center;
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 6px;
+    }
+    .modal > p { text-align: center; color: var(--text-light); font-size: 13.5px; margin-bottom: 24px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-weight: 600; font-size: 13px; color: var(--text-mid); margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 12px 16px; border: 2px solid rgba(244,143,177,0.25);
+      border-radius: 14px; font-family: 'Quicksand', sans-serif; font-size: 14px;
+      color: var(--text-dark); background: var(--bg); outline: none;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--pink-mid); }
+    .form-group select:disabled { opacity: 0.6; cursor: not-allowed; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 26px; }
+    .btn-primary {
+      flex: 1; padding: 14px; border: none; border-radius: 14px;
+      background: linear-gradient(135deg, var(--pink-mid), #ab47bc);
+      color: white; font-family: 'Quicksand', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+      box-shadow: 0 3px 12px rgba(236,64,122,0.3);
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 20px rgba(236,64,122,0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+    .btn-secondary {
+      padding: 14px 20px; border: 2px solid var(--pink); border-radius: 14px;
+      background: transparent; color: var(--pink-mid);
+      font-family: 'Quicksand', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+    }
+    .btn-secondary:hover { background: var(--pink-light); }
+
+    .toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--text-dark); color: white; padding: 12px 24px;
+      border-radius: 12px; font-size: 13px; font-weight: 600;
+      opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 500px) {
+      .header { padding: 14px 16px; }
+      .messages { padding: 16px 12px; }
+      .input-area { padding: 12px 12px 16px; }
+      .message { max-width: 90%; }
+      .welcome h2 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-decor">
+  <div class="blob"></div>
+  <div class="blob"></div>
+  <div class="blob"></div>
+</div>
+
+<div class="app">
+  <div class="header">
+    <div class="header-avatar">💜</div>
+    <div class="header-info">
+      <h1>Mon Assistant INTARA</h1>
+      <p>Propulsé par AnythingLLM</p>
+    </div>
+    <span id="statusDot" class="status-dot disconnected" title="En attente de configuration"></span>
+    <button class="btn-icon" onclick="showConfig()" title="Configuration">⚙️</button>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">💌</div>
+      <h2>Bienvenue, INTARA !</h2>
+      <p>Ton assistant IA t'attend. Configure ta clé API et commence à discuter 💖</p>
+      <div class="suggestions">
+        <button class="suggestion-chip" onclick="useSuggestion(this)">💖 Dis-moi quelque chose de gentil</button>
+        <button class="suggestion-chip" onclick="useSuggestion(this)">🎵 Recommande-moi une chanson</button>
+        <button class="suggestion-chip" onclick="useSuggestion(this)">📝 Rédige-moi un poème</button>
+        <button class="suggestion-chip" onclick="useSuggestion(this)">💡 Donne-moi un conseil du jour</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <textarea id="userInput" rows="1" placeholder="Écris ton message ici, mon cœur... 💕"
+        onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()" title="Envoyer">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- Config Modal -->
+<div class="modal-overlay" id="configModal" style="display:none;">
+  <div class="modal">
+    <h2>⚙️ Configuration</h2>
+    <p>Connecte ton assistant à ton instance AnythingLLM</p>
+    <div class="form-group">
+      <label>🌐 URL du serveur</label>
+      <input type="text" id="serverUrl" placeholder="http://localhost:3001" spellcheck="false" />
+    </div>
+    <div class="form-group">
+      <label>🔑 Clé API</label>
+      <input type="password" id="apiKey" placeholder="Colle ta clé API AnythingLLM ici" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <button type="button" class="btn-secondary" id="connectBtn" onclick="fetchWorkspaces()" style="width:100%; padding:10px;">
+        🔌 Tester la connexion & charger les Workspaces
+      </button>
+      <p id="connectStatus" style="font-size:12.5px; margin-top:8px; text-align:center; display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>📂 Espace de travail (Workspace)</label>
+      <select id="workspace" disabled>
+        <option value="">Clique d'abord sur « Tester la connexion »</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>💬 Mode de réponse</label>
+      <select id="chatMode">
+        <option value="chat">Chat (Discussion libre + documents)</option>
+        <option value="query">Query (Uniquement à partir de mes documents)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="hideConfig()">Annuler</button>
+      <button class="btn-primary" id="saveConfigBtn" onclick="saveConfig()" disabled>💾 Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let config = loadConfig();
+  let sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+  let isGenerating = false;
+
+  function loadConfig() {
+    try {
+      const s = localStorage.getItem('intara_config');
+      return s ? JSON.parse(s) : null;
+    } catch { return null; }
+  }
+
+  function saveConfigToStorage() {
+    localStorage.setItem('intara_config', JSON.stringify(config));
+  }
+
+  function updateStatus() {
+    const dot = document.getElementById('statusDot');
+    const isConfigured = Boolean(config?.apiKey && config?.workspace);
+    dot.classList.toggle('disconnected', !isConfigured);
+    dot.title = isConfigured
+      ? `Connecté (${config.workspaceName || config.workspace})`
+      : 'En attente de configuration';
+  }
+
+  function showConfig() {
+    document.getElementById('serverUrl').value = config?.serverUrl || 'http://localhost:3001';
+    document.getElementById('apiKey').value = config?.apiKey || '';
+    document.getElementById('chatMode').value = config?.mode || 'chat';
+    const statusEl = document.getElementById('connectStatus');
+    statusEl.style.display = 'none';
+    document.getElementById('configModal').style.display = 'flex';
+
+    if (config?.apiKey) {
+      fetchWorkspaces(true);
+    }
+  }
+
+  function hideConfig() { document.getElementById('configModal').style.display = 'none'; }
+
+  async function fetchWorkspaces(silent = false) {
+    const baseUrl = (document.getElementById('serverUrl').value.trim().replace(/\/+$/, '') || 'http://localhost:3001');
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const statusEl = document.getElementById('connectStatus');
+    const selectEl = document.getElementById('workspace');
+    const saveBtn = document.getElementById('saveConfigBtn');
+
+    if (!apiKey) {
+      if (!silent) {
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#c2185b';
+        statusEl.textContent = '⚠️ Entre d\'abord ta clé API.';
+      }
+      return;
+    }
+
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--text-mid)';
+    statusEl.textContent = '⏳ Connexion à AnythingLLM…';
+
+    try {
+      const resp = await fetch(`${baseUrl}/api/v1/workspaces`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+
+      if (!resp.ok) {
+        throw new Error(resp.status === 401 || resp.status === 403 ? 'cle' : 'http');
+      }
+
+      const data = await resp.json();
+      const list = data?.workspaces || [];
+
+      selectEl.innerHTML = '';
+      if (!list.length) {
+        throw new Error('vide');
+      }
+
+      list.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.slug;
+        opt.textContent = w.name;
+        selectEl.appendChild(opt);
+      });
+
+      if (config?.workspace && list.some(w => w.slug === config.workspace)) {
+        selectEl.value = config.workspace;
+      }
+
+      selectEl.disabled = false;
+      saveBtn.disabled = false;
+      statusEl.style.color = '#2e7d32';
+      statusEl.textContent = '✅ Connecté ! Choisis ton espace de travail puis clique sur Sauvegarder.';
+    } catch (err) {
+      selectEl.disabled = true;
+      saveBtn.disabled = true;
+      statusEl.style.color = '#c2185b';
+      if (err.message === 'cle') {
+        statusEl.textContent = '❌ Clé API refusée : vérifie ta clé dans AnythingLLM.';
+      } else if (err.message === 'vide') {
+        statusEl.textContent = '⚠️ Aucun espace de travail trouvé dans AnythingLLM.';
+      } else {
+        statusEl.textContent = '❌ AnythingLLM ne répond pas : vérifie qu\'il est bien ouvert sur ce PC.';
+      }
+    }
+  }
+
+  function saveConfig() {
+    const selectEl = document.getElementById('workspace');
+    const workspaceSlug = selectEl.value.trim();
+    if (!workspaceSlug) {
+      showToast('⚠️ Choisis un espace de travail');
+      return;
+    }
+
+    config = {
+      serverUrl: document.getElementById('serverUrl').value.trim().replace(/\/+$/, '') || 'http://localhost:3001',
+      apiKey: document.getElementById('apiKey').value.trim(),
+      workspace: workspaceSlug,
+      workspaceName: selectEl.options[selectEl.selectedIndex]?.text || workspaceSlug,
+      mode: document.getElementById('chatMode').value || 'chat',
+    };
+    saveConfigToStorage();
+    updateStatus();
+    hideConfig();
+    showToast('💖 Configuration sauvegardée !');
+  }
+
+  if (config) updateStatus();
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function formatText(text) {
+    let cleaned = text.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim();
+    cleaned = cleaned.replace(/\[\[([^\]|]+)(\|([^\]]+))?\]\]/g, (_, a, __, b) => b || a);
+    let h = cleaned.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    h = h.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+    h = h.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    h = h.replace(/\n/g, '<br>');
+    return h;
+  }
+
+  function addMessage(role, content) {
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.style.display = 'none';
+    const div = document.getElementById('messages');
+    const wrapper = document.createElement('div');
+    wrapper.className = `message ${role}`;
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    avatar.textContent = role === 'user' ? '👩' : '🤖';
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.innerHTML = formatText(content);
+    wrapper.appendChild(avatar); wrapper.appendChild(bubble);
+    div.appendChild(wrapper);
+    div.scrollTop = div.scrollHeight;
+    return bubble;
+  }
+
+  function addTyping() {
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.style.display = 'none';
+    const div = document.getElementById('messages');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message assistant'; wrapper.id = 'typingIndicator';
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar'; avatar.textContent = '🤖';
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble typing';
+    bubble.innerHTML = '<span></span><span></span><span></span>';
+    wrapper.appendChild(avatar); wrapper.appendChild(bubble);
+    div.appendChild(wrapper);
+    div.scrollTop = div.scrollHeight;
+    return bubble;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  function useSuggestion(btn) {
+    document.getElementById('userInput').value = btn.textContent.trim();
+    sendMessage();
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text || isGenerating) return;
+
+    if (!config?.apiKey || !config?.workspace) {
+      showToast('⚠️ Configure ta clé API et ton Workspace dans ⚙️');
+      showConfig();
+      return;
+    }
+
+    input.value = ''; input.style.height = 'auto';
+    isGenerating = true;
+    document.getElementById('sendBtn').disabled = true;
+
+    addMessage('user', text);
+    const bubble = addTyping();
+    const messagesDiv = document.getElementById('messages');
+
+    try {
+      const resp = await fetch(`${config.serverUrl}/api/v1/workspace/${encodeURIComponent(config.workspace)}/stream-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          message: text,
+          mode: config.mode || 'chat',
+          sessionId: sessionId,
+        }),
+      });
+
+      if (!resp.ok || !resp.body) {
+        const err = await resp.text().catch(() => '');
+        throw new Error(`Erreur ${resp.status}: ${err || 'Impossible de joindre AnythingLLM'}`);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+      let sources = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop();
+
+        for (const block of parts) {
+          const line = block.replace(/^data:\s*/, '').trim();
+          if (!line) continue;
+          let data;
+          try { data = JSON.parse(line); } catch { continue; }
+          if (data.error) throw new Error(data.error);
+          if (data.textResponse) fullText += data.textResponse;
+          if (data.sources && data.sources.length) sources = data.sources;
+
+          const cleaned = fullText.replace(/<think>[\s\S]*?(<\/think>|$)/g, '');
+          if (cleaned) {
+            bubble.classList.remove('typing');
+            bubble.innerHTML = formatText(cleaned);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          }
+        }
+      }
+
+      const finalClean = fullText.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim();
+      bubble.classList.remove('typing');
+      bubble.removeAttribute('id');
+      if (bubble.parentElement) bubble.parentElement.removeAttribute('id');
+
+      if (!finalClean) {
+        bubble.innerHTML = formatText("Désolée, je n'ai pas reçu de réponse d'AnythingLLM... 💔");
+      } else {
+        bubble.innerHTML = formatText(finalClean);
+        if (sources.length && !finalClean.startsWith('Je ne trouve pas')) {
+          const sourceEl = document.createElement('div');
+          sourceEl.style.cssText = 'margin-top:8px; padding-top:6px; border-top:1px solid rgba(244,143,177,0.25); font-size:12px; color:var(--text-light);';
+          sourceEl.textContent = '📄 Source : ' + (sources[0].title || 'Documents du workspace');
+          bubble.appendChild(sourceEl);
+        }
+      }
+    } catch (err) {
+      removeTyping();
+      addMessage('assistant', `⚠️ Oups ! ${err.message}\n\nVérifie ta configuration (⚙️) et qu'AnythingLLM est bien ouvert sur ton PC.`);
+    }
+
+    isGenerating = false;
+    document.getElementById('sendBtn').disabled = false;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    document.getElementById('userInput').focus();
+  }
+</script>
+</body>
+</html>
