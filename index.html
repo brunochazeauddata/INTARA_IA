@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💖 INTARA — Assistante IA</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+    :root {
+      --pink-light: #fce4ec;
+      --pink: #f48fb1;
+      --pink-mid: #ec407a;
+      --pink-dark: #c2185b;
+      --purple-soft: #e1bee7;
+      --purple: #ce93d8;
+      --lavender: #f3e5f5;
+      --bg: #fdf2f8;
+      --white: #ffffff;
+      --text-dark: #4a1942;
+      --text-mid: #6d3a6d;
+      --text-light: #9c669c;
+      --shadow-sm: 0 2px 8px rgba(194, 24, 91, 0.08);
+      --shadow-md: 0 4px 20px rgba(194, 24, 91, 0.12);
+      --shadow-lg: 0 8px 40px rgba(194, 24, 91, 0.18);
+      --radius: 20px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: var(--bg);
+      color: var(--text-dark);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .bg-decor {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .bg-decor .blob {
+      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.35;
+      animation: float 18s ease-in-out infinite alternate;
+    }
+    .bg-decor .blob:nth-child(1) { width: 500px; height: 500px; background: var(--pink); top: -10%; left: -10%; }
+    .bg-decor .blob:nth-child(2) { width: 400px; height: 400px; background: var(--purple); bottom: -10%; right: -10%; animation-delay: -6s; }
+    .bg-decor .blob:nth-child(3) { width: 300px; height: 300px; background: #ffcc80; top: 50%; left: 60%; animation-delay: -12s; }
+
+    @keyframes float {
+      0%   { transform: translate(0, 0) scale(1); }
+      50%  { transform: translate(40px, -30px) scale(1.08); }
+      100% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    .app {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; height: 100vh; max-width: 800px; margin: 0 auto;
+    }
+
+    .header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 24px;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(244,143,177,0.2);
+      box-shadow: var(--shadow-sm);
+    }
+    .header-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: white;
+      box-shadow: 0 2px 12px rgba(236,64,122,0.3); flex-shrink: 0;
+    }
+    .header-info h1 {
+      font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-info p { font-size: 12px; color: var(--text-light); font-weight: 500; }
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%; background: #4caf50;
+      margin-left: auto; box-shadow: 0 0 8px rgba(76,175,80,0.5); flex-shrink: 0;
+    }
+    .status-dot.disconnected { background: #ff9800; box-shadow: 0 0 8px rgba(255,152,0,0.5); }
+    .btn-icon {
+      background: none; border: none; font-size: 20px; cursor: pointer;
+      padding: 6px; border-radius: 50%; transition: background 0.2s; color: var(--text-mid);
+    }
+    .btn-icon:hover { background: rgba(244,143,177,0.15); }
+
+    /* Navigation Tabs */
+    .tabs-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 24px;
+      background: rgba(255,255,255,0.6); backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(244,143,177,0.2);
+    }
+    .tab-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 18px; border-radius: 50px; border: 1.5px solid transparent;
+      background: transparent; color: var(--text-mid);
+      font-family: 'Quicksand', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+    }
+    .tab-btn:hover { background: rgba(244,143,177,0.12); color: var(--pink-dark); }
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--pink-mid), #ab47bc);
+      color: var(--white); box-shadow: 0 3px 12px rgba(236,64,122,0.25);
+    }
+    .tab-badge {
+      background: rgba(255,255,255,0.25); color: inherit;
+      padding: 1px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 700;
+    }
+    .tab-btn:not(.active) .tab-badge {
+      background: var(--pink-light); color: var(--pink-dark);
+    }
+    .btn-new-chat {
+      margin-left: auto;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 50px;
+      border: 1.5px solid var(--pink); background: var(--white);
+      color: var(--pink-mid); font-family: 'Quicksand', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;
+    }
+    .btn-new-chat:hover {
+      background: var(--pink-mid); color: var(--white);
+      box-shadow: var(--shadow-sm); transform: translateY(-1px);
+    }
+
+    /* Active Conversation Subbar */
+    .active-conv-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 8px 24px; background: rgba(252,228,236,0.45);
+      border-bottom: 1px solid rgba(244,143,177,0.15); font-size: 13px; color: var(--text-mid);
+    }
+    .active-conv-title {
+      display: flex; align-items: center; gap: 8px; font-weight: 600;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .active-conv-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .mini-action-btn {
+      background: none; border: none; cursor: pointer; font-size: 14px;
+      padding: 4px 8px; border-radius: 8px; color: var(--text-mid);
+      transition: all 0.2s; font-family: 'Quicksand', sans-serif; font-weight: 600;
+    }
+    .mini-action-btn:hover { background: rgba(236,64,122,0.12); color: var(--pink-dark); }
+
+    /* History Tab View */
+    .history-view {
+      flex: 1; overflow-y: auto; padding: 20px;
+      display: none; flex-direction: column; gap: 16px;
+    }
+    .history-view.active { display: flex; }
+    .history-toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      background: rgba(255,255,255,0.85); padding: 14px 16px;
+      border-radius: 18px; border: 1px solid rgba(244,143,177,0.2);
+      box-shadow: var(--shadow-sm);
+    }
+    .history-search {
+      flex: 1; min-width: 180px; padding: 10px 14px;
+      border: 1.5px solid rgba(244,143,177,0.3); border-radius: 12px;
+      font-family: 'Quicksand', sans-serif; font-size: 13.5px; color: var(--text-dark);
+      background: var(--bg); outline: none; transition: border-color 0.2s;
+    }
+    .history-search:focus { border-color: var(--pink-mid); }
+    .history-sort {
+      padding: 10px 14px; border: 1.5px solid rgba(244,143,177,0.3);
+      border-radius: 12px; font-family: 'Quicksand', sans-serif;
+      font-size: 13.5px; font-weight: 600; color: var(--text-dark);
+      background: var(--bg); outline: none; cursor: pointer;
+    }
+    .history-sort:focus { border-color: var(--pink-mid); }
+    .history-section-label {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text-light); margin: 4px 4px -6px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .conv-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 16px;
+      background: var(--white); border: 1.5px solid rgba(244,143,177,0.18);
+      box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.22s;
+    }
+    .conv-card:hover {
+      border-color: var(--pink); box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+    .conv-card.current {
+      border-color: var(--pink-mid);
+      background: linear-gradient(to right, rgba(252,228,236,0.5), var(--white));
+    }
+    .conv-card.pinned {
+      border-left: 4px solid var(--pink-mid);
+    }
+    .conv-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--pink-light); color: var(--pink-dark);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .conv-card.current .conv-icon {
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      color: var(--white);
+    }
+    .conv-info { flex: 1; min-width: 0; }
+    .conv-title-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
+    }
+    .conv-title {
+      font-weight: 700; font-size: 14.5px; color: var(--text-dark);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .conv-badge-active {
+      font-size: 10.5px; font-weight: 700; padding: 2px 8px;
+      border-radius: 20px; background: var(--pink-light); color: var(--pink-dark);
+      flex-shrink: 0;
+    }
+    .conv-preview {
+      font-size: 12.5px; color: var(--text-light);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .conv-meta {
+      font-size: 11px; color: var(--text-light); margin-top: 4px;
+      display: flex; gap: 10px;
+    }
+    .conv-actions {
+      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    }
+    .conv-action-btn {
+      width: 34px; height: 34px; border-radius: 10px; border: none;
+      background: transparent; color: var(--text-mid); font-size: 15px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .conv-action-btn:hover { background: var(--pink-light); color: var(--pink-dark); }
+    .conv-action-btn.pinned-active { color: var(--pink-mid); background: rgba(236,64,122,0.12); }
+    .conv-action-btn.delete:hover { background: #ffebee; color: #c62828; }
+    .conv-rename-input {
+      width: 100%; padding: 6px 10px; border: 1.5px solid var(--pink-mid);
+      border-radius: 8px; font-family: 'Quicksand', sans-serif;
+      font-size: 14px; font-weight: 600; color: var(--text-dark);
+      background: var(--bg); outline: none;
+    }
+    .history-empty {
+      text-align: center; padding: 48px 20px; color: var(--text-light);
+    }
+    .history-empty-icon { font-size: 46px; margin-bottom: 10px; }
+
+    .messages {
+      flex: 1; overflow-y: auto; padding: 24px 20px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .messages::-webkit-scrollbar { width: 5px; }
+    .messages::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 10px; }
+
+    .message {
+      display: flex; gap: 10px; max-width: 82%;
+      animation: msgIn 0.35s ease-out;
+    }
+    @keyframes msgIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+    .message-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0; margin-top: 2px;
+    }
+    .message.assistant .message-avatar { background: linear-gradient(135deg, var(--pink-mid), var(--purple)); color: white; }
+    .message.user .message-avatar { background: linear-gradient(135deg, #90caf9, #ba68c8); color: white; }
+
+    .message-bubble {
+      padding: 14px 18px; border-radius: var(--radius);
+      font-size: 14.5px; line-height: 1.65; word-wrap: break-word;
+    }
+    .message.assistant .message-bubble {
+      background: var(--white); border: 1px solid rgba(244,143,177,0.15);
+      border-top-left-radius: 4px; box-shadow: var(--shadow-sm); color: var(--text-dark);
+    }
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, var(--pink-mid), #ab47bc);
+      color: white; border-top-right-radius: 4px;
+      box-shadow: 0 4px 16px rgba(236,64,122,0.25);
+    }
+    .message-bubble code { background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 5px; font-size: 13px; font-family: 'Courier New', monospace; }
+    .message.user .message-bubble code { background: rgba(255,255,255,0.2); }
+    .message-bubble pre { background: rgba(0,0,0,0.06); padding: 12px; border-radius: 10px; overflow-x: auto; margin: 8px 0; font-size: 13px; }
+    .message-bubble pre code { background: none; padding: 0; }
+
+    .typing { display: flex; gap: 5px; padding: 4px 0; align-items: center; }
+    .typing span {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--pink);
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .welcome {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center; padding: 40px 20px; flex: 1;
+    }
+    .welcome-icon { font-size: 56px; margin-bottom: 16px; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    .welcome h2 {
+      font-family: 'Playfair Display', serif; font-size: 28px;
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 8px;
+    }
+    .welcome p { color: var(--text-light); font-size: 15px; max-width: 340px; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; justify-content: center; }
+    .suggestion-chip {
+      background: var(--white); border: 1.5px solid var(--pink); color: var(--pink-mid);
+      padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.25s; font-family: 'Quicksand', sans-serif;
+    }
+    .suggestion-chip:hover { background: var(--pink-mid); color: white; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+    .input-area {
+      padding: 16px 20px 20px;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(244,143,177,0.15);
+    }
+    .input-row {
+      display: flex; align-items: flex-end; gap: 10px;
+      background: var(--white); border: 2px solid rgba(244,143,177,0.25);
+      border-radius: 50px; padding: 6px 6px 6px 22px;
+      box-shadow: var(--shadow-md); transition: border-color 0.3s;
+    }
+    .input-row:focus-within { border-color: var(--pink-mid); box-shadow: var(--shadow-lg), 0 0 0 3px rgba(236,64,122,0.12); }
+    .input-row textarea {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-family: 'Quicksand', sans-serif; font-size: 15px; color: var(--text-dark);
+      resize: none; max-height: 120px; line-height: 1.5; padding: 8px 0;
+    }
+    .input-row textarea::placeholder { color: var(--text-light); }
+    .btn-send {
+      width: 48px; height: 48px; border-radius: 50%; border: none;
+      background: linear-gradient(135deg, var(--pink-mid), #ab47bc);
+      color: white; font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.25s; flex-shrink: 0;
+      box-shadow: 0 3px 12px rgba(236,64,122,0.3);
+    }
+    .btn-send:hover { transform: scale(1.08); box-shadow: 0 5px 20px rgba(236,64,122,0.4); }
+    .btn-send:active { transform: scale(0.95); }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(74,25,66,0.4); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal {
+      background: var(--white); border-radius: 24px; padding: 28px 28px 24px;
+      width: 94%; max-width: 520px; max-height: 90vh; overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      animation: slideUp 0.35s ease-out;
+    }
+    .config-section {
+      background: rgba(252,228,236,0.35); border: 1.5px solid rgba(244,143,177,0.25);
+      border-radius: 16px; padding: 14px 16px; margin-bottom: 14px;
+    }
+    .config-section-title {
+      font-weight: 700; font-size: 13.5px; color: var(--pink-dark);
+      margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .vault-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11.5px; font-weight: 700; padding: 4px 10px;
+      border-radius: 20px; background: var(--pink-light); color: var(--pink-dark);
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal h2 {
+      font-family: 'Playfair Display', serif; font-size: 24px; text-align: center;
+      background: linear-gradient(135deg, var(--pink-mid), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 6px;
+    }
+    .modal > p { text-align: center; color: var(--text-light); font-size: 13.5px; margin-bottom: 24px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-weight: 600; font-size: 13px; color: var(--text-mid); margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 12px 16px; border: 2px solid rgba(244,143,177,0.25);
+      border-radius: 14px; font-family: 'Quicksand', sans-serif; font-size: 14px;
+      color: var(--text-dark); background: var(--bg); outline: none;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--pink-mid); }
+    .form-group select:disabled { opacity: 0.6; cursor: not-allowed; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 26px; }
+    .btn-primary {
+      flex: 1; padding: 14px; border: none; border-radius: 14px;
+      background: linear-gradient(135deg, var(--pink-mid), #ab47bc);
+      color: white; font-family: 'Quicksand', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+      box-shadow: 0 3px 12px rgba(236,64,122,0.3);
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 20px rgba(236,64,122,0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+    .btn-secondary {
+      padding: 14px 20px; border: 2px solid var(--pink); border-radius: 14px;
+      background: transparent; color: var(--pink-mid);
+      font-family: 'Quicksand', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+    }
+    .btn-secondary:hover { background: var(--pink-light); }
+
+    .toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--text-dark); color: white; padding: 12px 24px;
+      border-radius: 12px; font-size: 13px; font-weight: 600;
+      opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 500px) {
+      .header { padding: 14px 16px; }
+      .messages { padding: 16px 12px; }
+      .input-area { padding: 12px 12px 16px; }
+      .message { max-width: 90%; }
+      .welcome h2 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-decor">
+  <div class="blob"></div>
+  <div class="blob"></div>
+  <div class="blob"></div>
+</div>
+
+<div class="app">
+  <div class="header">
+    <div class="header-avatar">💜</div>
+    <div class="header-info">
+      <h1>Mon Assistant INTARA</h1>
+      <p id="headerSubtitle">Coffre Obsidian + IA (Actif 24h/24)</p>
+    </div>
+    <span id="vaultBadge" class="vault-pill" onclick="promptUnlockVault()" style="cursor:pointer;" title="Cliquer pour déverrouiller ou vérifier le coffre">🔒 Coffre verrouillé</span>
+    <span id="statusDot" class="status-dot disconnected" title="En attente de configuration"></span>
+    <button class="btn-icon" onclick="showConfig()" title="Configuration">⚙️</button>
+  </div>
+
+  <!-- Onglets Discussion / Historique -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" id="tabChatBtn" onclick="switchTab('chat')">
+      💬 Discussion
+    </button>
+    <button class="tab-btn" id="tabHistoryBtn" onclick="switchTab('history')">
+      📚 Historique <span class="tab-badge" id="historyCountBadge">0</span>
+    </button>
+    <button class="btn-new-chat" onclick="startNewConversation()" title="Démarrer une nouvelle conversation">
+      ➕ Nouvelle discussion
+    </button>
+  </div>
+
+  <!-- Barre d'info de la conversation active -->
+  <div class="active-conv-bar" id="activeConvBar" style="display:none;">
+    <div class="active-conv-title">
+      <span id="activeConvPinIcon">💬</span>
+      <span id="activeConvTitleText">Nouvelle conversation</span>
+    </div>
+    <div class="active-conv-actions">
+      <button class="mini-action-btn" id="activePinBtn" onclick="togglePinActive()" title="Épingler / Désépingler">📌</button>
+      <button class="mini-action-btn" onclick="promptRenameActive()" title="Renommer cette conversation">✏️ Renommer</button>
+      <button class="mini-action-btn" onclick="deleteActiveConversation()" title="Supprimer cette conversation">🗑️</button>
+    </div>
+  </div>
+
+  <!-- Vue Discussion -->
+  <div class="messages" id="messages"></div>
+
+  <!-- Vue Historique des conversations -->
+  <div class="history-view" id="historyView">
+    <div class="history-toolbar">
+      <input type="text" id="historySearch" class="history-search"
+        placeholder="🔍 Rechercher dans l'historique..." oninput="renderHistory()" />
+      <select id="historySort" class="history-sort" onchange="renderHistory()" title="Trier les conversations">
+        <option value="recent">🕒 Plus récentes</option>
+        <option value="oldest">⏳ Plus anciennes</option>
+        <option value="az">🔤 Nom (A → Z)</option>
+        <option value="za">🔤 Nom (Z → A)</option>
+        <option value="messages">💬 Nombre de messages</option>
+      </select>
+    </div>
+    <div id="historyContainer" class="history-list"></div>
+  </div>
+
+  <div class="input-area" id="inputArea">
+    <div class="input-row">
+      <textarea id="userInput" rows="1" placeholder="Écris ton message ici, mon cœur... 💕"
+        onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()" title="Envoyer">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- Config Modal -->
+<div class="modal-overlay" id="configModal" style="display:none;">
+  <div class="modal">
+    <h2>⚙️ Configuration</h2>
+    <p>Choisis comment ton assistante INTARA répond (PC allumé ou éteint)</p>
+
+    <div class="form-group">
+      <label>🚀 Mode de fonctionnement</label>
+      <select id="engineMode" onchange="updateConfigUI()">
+        <option value="hybrid">🔄 Hybride Auto (Local si PC allumé, sinon Cloud 24h/24)</option>
+        <option value="cloud">☁️ Autonome 24h/24 (Fonctionne PC éteint via Coffre Obsidian)</option>
+        <option value="local">💻 Local uniquement (AnythingLLM + TextGen sur ce PC)</option>
+      </select>
+    </div>
+
+    <!-- Section Cloud 24h/24 (PC éteint) -->
+    <div class="config-section" id="cloudConfigSection">
+      <div class="config-section-title">
+        ☁️ Mode 24h/24 (PC éteint — 47 notes Obsidian chiffrées)
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>🔒 Mot de passe secret du Coffre INTARA</label>
+        <input type="password" id="vaultPasswordInput" placeholder="Mot de passe secret pour déverrouiller les 47 notes" autocomplete="off" oninput="updateSaveBtnState()" />
+        <p id="vaultUnlockStatus" style="font-size:12px; margin-top:5px; display:none;"></p>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>🤖 Fournisseur IA en ligne (Gratuit)</label>
+        <select id="cloudProvider" onchange="onCloudProviderChange()">
+          <option value="groq">Groq Cloud (100% Gratuit & ultra-rapide — Qwen / Llama 3.3)</option>
+          <option value="openrouter">OpenRouter (Modèles Qwen / Llama gratuits)</option>
+          <option value="gemini">Google Gemini (Gratuit — Gemini 2.5 Flash)</option>
+          <option value="mistral">Mistral AI (La Plateforme)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>🧠 Modèle IA Cloud</label>
+        <input type="text" id="cloudModel" value="llama-3.3-70b-versatile" spellcheck="false" />
+      </div>
+      <div class="form-group" style="margin-bottom:6px;">
+        <label>🔑 Clé API Cloud <a id="cloudKeyHelpLink" href="https://console.groq.com/keys" target="_blank" style="color:var(--pink-mid); font-size:11.5px; margin-left:6px;">(Obtenir une clé gratuite ↗)</a></label>
+        <input type="password" id="cloudApiKey" placeholder="Colle ta clé API Groq / Gemini / OpenRouter ici" autocomplete="off" oninput="updateSaveBtnState()" />
+      </div>
+    </div>
+
+    <!-- Section Local AnythingLLM -->
+    <div class="config-section" id="localConfigSection">
+      <div class="config-section-title">
+        💻 Mode Local (AnythingLLM + TextGen sur ton PC)
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>🌐 URL du serveur AnythingLLM</label>
+        <input type="text" id="serverUrl" placeholder="http://localhost:3001" spellcheck="false" />
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>🔑 Clé API AnythingLLM</label>
+        <input type="password" id="apiKey" placeholder="Colle ta clé API AnythingLLM ici" autocomplete="off" oninput="updateSaveBtnState()" />
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <button type="button" class="btn-secondary" id="connectBtn" onclick="fetchWorkspaces()" style="width:100%; padding:10px; font-size:13.5px;">
+          🔌 Tester AnythingLLM & charger les Workspaces
+        </button>
+        <p id="connectStatus" style="font-size:12px; margin-top:6px; text-align:center; display:none;"></p>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>📂 Espace de travail (Workspace)</label>
+        <select id="workspace" disabled onchange="updateSaveBtnState()">
+          <option value="">Clique d'abord sur « Tester AnythingLLM »</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:4px;">
+        <label>💬 Mode AnythingLLM</label>
+        <select id="chatMode">
+          <option value="query">Requête (Uniquement à partir de mes documents)</option>
+          <option value="chat">Chat (Discussion libre + documents)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="hideConfig()">Annuler</button>
+      <button class="btn-primary" id="saveConfigBtn" onclick="saveConfig()">💾 Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Chargement du Coffre Obsidian INTARA chiffré en 256 bits -->
+<script src="coffre-intara.js"></script>
+<script>
+  const STORAGE_CONVS = 'intara_conversations';
+  const STORAGE_ACTIVE_ID = 'intara_active_conv_id';
+  const STORAGE_VAULT_PWD = 'intara_vault_pwd';
+
+  // ---------- Déchiffrement 256 bits du Coffre Obsidian (ChaCha20-SHA256) ----------
+  function sha256Bytes(bytes) {
+    const K = new Uint32Array([
+      0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+      0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+      0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+      0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+      0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+      0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+      0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+      0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+    ]);
+    let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
+    let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
+
+    const bitLen = bytes.length * 8;
+    const padLen = ((bytes.length + 9 + 63) & ~63);
+    const padded = new Uint8Array(padLen);
+    padded.set(bytes);
+    padded[bytes.length] = 0x80;
+    const view = new DataView(padded.buffer);
+    view.setUint32(padLen - 8, Math.floor(bitLen / 0x100000000), false);
+    view.setUint32(padLen - 4, bitLen >>> 0, false);
+
+    const W = new Uint32Array(64);
+    for (let off = 0; off < padLen; off += 64) {
+      for (let i = 0; i < 16; i++) W[i] = view.getUint32(off + i * 4, false);
+      for (let i = 16; i < 64; i++) {
+        const s0 = (((W[i-15] >>> 7) | (W[i-15] << 25)) ^ ((W[i-15] >>> 18) | (W[i-15] << 14)) ^ (W[i-15] >>> 3)) >>> 0;
+        const s1 = (((W[i-2] >>> 17) | (W[i-2] << 15)) ^ ((W[i-2] >>> 19) | (W[i-2] << 13)) ^ (W[i-2] >>> 10)) >>> 0;
+        W[i] = (W[i-16] + s0 + W[i-7] + s1) >>> 0;
+      }
+      let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+      for (let i = 0; i < 64; i++) {
+        const S1 = (((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7))) >>> 0;
+        const ch = ((e & f) ^ (~e & g)) >>> 0;
+        const temp1 = (h + S1 + ch + K[i] + W[i]) >>> 0;
+        const S0 = (((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10))) >>> 0;
+        const maj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;
+        const temp2 = (S0 + maj) >>> 0;
+        h = g; g = f; f = e; e = (d + temp1) >>> 0;
+        d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+      }
+      h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0;
+      h4 = (h4 + e) >>> 0; h5 = (h5 + f) >>> 0; h6 = (h6 + g) >>> 0; h7 = (h7 + h) >>> 0;
+    }
+    const out = new Uint8Array(32);
+    const outView = new DataView(out.buffer);
+    outView.setUint32(0, h0, false); outView.setUint32(4, h1, false);
+    outView.setUint32(8, h2, false); outView.setUint32(12, h3, false);
+    outView.setUint32(16, h4, false); outView.setUint32(20, h5, false);
+    outView.setUint32(24, h6, false); outView.setUint32(28, h7, false);
+    return out;
+  }
+
+  function bytesToHex(bytes) {
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function base64ToUint8(b64) {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function rotl32(v, c) {
+    return ((v << c) | (v >>> (32 - c))) >>> 0;
+  }
+
+  function quarterRound(x, a, b, c, d) {
+    x[a] = (x[a] + x[b]) >>> 0; x[d] = rotl32(x[d] ^ x[a], 16);
+    x[c] = (x[c] + x[d]) >>> 0; x[b] = rotl32(x[b] ^ x[c], 12);
+    x[a] = (x[a] + x[b]) >>> 0; x[d] = rotl32(x[d] ^ x[a], 8);
+    x[c] = (x[c] + x[d]) >>> 0; x[b] = rotl32(x[b] ^ x[c], 7);
+  }
+
+  function chacha20Xor(dataBytes, key32, nonce12) {
+    const out = new Uint8Array(dataBytes.length);
+    const state = new Uint32Array(16);
+    const working = new Uint32Array(16);
+    const block = new Uint8Array(64);
+    const blockView = new DataView(block.buffer);
+
+    state[0] = 0x61707865; state[1] = 0x3320646e; state[2] = 0x79622d32; state[3] = 0x6b206574;
+    const keyView = new DataView(key32.buffer, key32.byteOffset, 32);
+    for (let i = 0; i < 8; i++) state[4 + i] = keyView.getUint32(i * 4, true);
+    const nonceView = new DataView(nonce12.buffer, nonce12.byteOffset, 12);
+    state[12] = 1;
+    state[13] = nonceView.getUint32(0, true);
+    state[14] = nonceView.getUint32(4, true);
+    state[15] = nonceView.getUint32(8, true);
+
+    let offset = 0;
+    while (offset < dataBytes.length) {
+      for (let i = 0; i < 16; i++) working[i] = state[i];
+      for (let r = 0; r < 10; r++) {
+        quarterRound(working, 0, 4, 8, 12); quarterRound(working, 1, 5, 9, 13);
+        quarterRound(working, 2, 6, 10, 14); quarterRound(working, 3, 7, 11, 15);
+        quarterRound(working, 0, 5, 10, 15); quarterRound(working, 1, 6, 11, 12);
+        quarterRound(working, 2, 7, 8, 13); quarterRound(working, 3, 4, 9, 14);
+      }
+      for (let i = 0; i < 16; i++) blockView.setUint32(i * 4, (working[i] + state[i]) >>> 0, true);
+      const take = Math.min(64, dataBytes.length - offset);
+      for (let i = 0; i < take; i++) out[offset + i] = dataBytes[offset + i] ^ block[i];
+      state[12] = (state[12] + 1) >>> 0;
+      offset += take;
+    }
+    return out;
+  }
+
+  function tryUnlockVaultWithPassword(pwd) {
+    if (window.INTARA_VAULT) return true;
+    const enc = window.INTARA_VAULT_ENCRYPTED;
+    if (!enc || !pwd) return false;
+    try {
+      const encText = new TextEncoder();
+      let h = sha256Bytes(encText.encode(pwd + ':' + enc.salt));
+      const iterBuf = new Uint8Array(36);
+      const iterView = new DataView(iterBuf.buffer);
+      for (let i = 0; i < (enc.iterations || 10000); i++) {
+        iterBuf.set(h, 0);
+        iterView.setUint32(32, i, true);
+        h = sha256Bytes(iterBuf);
+      }
+      const verifyBytes = encText.encode('INTARA_VERIFY');
+      const vInput = new Uint8Array(32 + verifyBytes.length);
+      vInput.set(h, 0);
+      vInput.set(verifyBytes, 32);
+      const verifyHex = bytesToHex(sha256Bytes(vInput));
+      if (verifyHex !== enc.verify) return false;
+
+      const nonceBytes = base64ToUint8(enc.nonce);
+      const cipherBytes = base64ToUint8(enc.data);
+      const plainBytes = chacha20Xor(cipherBytes, h, nonceBytes);
+      window.INTARA_VAULT = JSON.parse(new TextDecoder().decode(plainBytes));
+      localStorage.setItem(STORAGE_VAULT_PWD, pwd);
+      return true;
+    } catch (e) {
+      console.error('Erreur déchiffrement coffre :', e);
+      return false;
+    }
+  }
+
+  function promptUnlockVault() {
+    if (window.INTARA_VAULT) {
+      showToast(`🔓 Coffre déverrouillé (${window.INTARA_VAULT.noteCount} notes protégées)`);
+      return;
+    }
+    const pwd = prompt('🔒 Entre le mot de passe secret du Coffre INTARA :');
+    if (!pwd) return;
+    if (tryUnlockVaultWithPassword(pwd.trim())) {
+      updateStatus();
+      renderActiveConversation();
+      showToast('💖 Coffre secret déverrouillé avec succès !');
+    } else {
+      showToast('❌ Mot de passe du coffre incorrect');
+    }
+  }
+
+  const CLOUD_PROVIDERS = {
+    groq: {
+      name: 'Groq Cloud',
+      baseUrl: 'https://api.groq.com/openai/v1',
+      defaultModel: 'llama-3.3-70b-versatile',
+      helpUrl: 'https://console.groq.com/keys',
+    },
+    openrouter: {
+      name: 'OpenRouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      defaultModel: 'qwen/qwen3-32b:free',
+      helpUrl: 'https://openrouter.ai/keys',
+    },
+    gemini: {
+      name: 'Google Gemini',
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+      defaultModel: 'gemini-2.5-flash',
+      helpUrl: 'https://aistudio.google.com/apikey',
+    },
+    mistral: {
+      name: 'Mistral AI',
+      baseUrl: 'https://api.mistral.ai/v1',
+      defaultModel: 'mistral-small-latest',
+      helpUrl: 'https://console.mistral.ai/api-keys/',
+    }
+  };
+
+  let config = loadConfig();
+  let conversations = loadConversations();
+  let activeConvId = localStorage.getItem(STORAGE_ACTIVE_ID) || null;
+  let currentTab = 'chat';
+  let renamingConvId = null;
+  let isGenerating = false;
+
+  function generateId() {
+    return (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'conv-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function loadConfig() {
+    try {
+      const s = localStorage.getItem('intara_config');
+      return s ? JSON.parse(s) : null;
+    } catch { return null; }
+  }
+
+  function saveConfigToStorage() {
+    localStorage.setItem('intara_config', JSON.stringify(config));
+  }
+
+  function loadConversations() {
+    try {
+      const raw = localStorage.getItem(STORAGE_CONVS);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+
+  function saveConversations() {
+    localStorage.setItem(STORAGE_CONVS, JSON.stringify(conversations));
+    if (activeConvId) {
+      localStorage.setItem(STORAGE_ACTIVE_ID, activeConvId);
+    } else {
+      localStorage.removeItem(STORAGE_ACTIVE_ID);
+    }
+    updateHistoryBadge();
+    updateActiveConvBar();
+  }
+
+  function getActiveConversation() {
+    return conversations.find(c => c.id === activeConvId) || null;
+  }
+
+  function createConversation(firstMessageText = '') {
+    const now = Date.now();
+    const title = firstMessageText
+      ? firstMessageText.replace(/^[^\wÀ-ÿ]+/, '').slice(0, 42) + (firstMessageText.length > 42 ? '…' : '')
+      : 'Nouvelle conversation';
+    const conv = {
+      id: generateId(),
+      title: title || 'Nouvelle conversation',
+      pinned: false,
+      createdAt: now,
+      updatedAt: now,
+      messages: [],
+    };
+    conversations.unshift(conv);
+    activeConvId = conv.id;
+    saveConversations();
+    return conv;
+  }
+
+  function updateHistoryBadge() {
+    const badge = document.getElementById('historyCountBadge');
+    if (badge) badge.textContent = conversations.length;
+  }
+
+  function updateActiveConvBar() {
+    const bar = document.getElementById('activeConvBar');
+    const conv = getActiveConversation();
+    if (!conv || conv.messages.length === 0 || currentTab !== 'chat') {
+      bar.style.display = 'none';
+      return;
+    }
+    bar.style.display = 'flex';
+    document.getElementById('activeConvPinIcon').textContent = conv.pinned ? '📌' : '💬';
+    document.getElementById('activeConvTitleText').textContent = conv.title;
+    const pinBtn = document.getElementById('activePinBtn');
+    pinBtn.textContent = conv.pinned ? '📌 Épinglée' : '📌 Épingler';
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    const isChat = tab === 'chat';
+    document.getElementById('tabChatBtn').classList.toggle('active', isChat);
+    document.getElementById('tabHistoryBtn').classList.toggle('active', !isChat);
+    document.getElementById('messages').style.display = isChat ? 'flex' : 'none';
+    document.getElementById('inputArea').style.display = isChat ? 'block' : 'none';
+    document.getElementById('historyView').classList.toggle('active', !isChat);
+    updateActiveConvBar();
+    if (!isChat) {
+      renderHistory();
+    } else {
+      const div = document.getElementById('messages');
+      div.scrollTop = div.scrollHeight;
+      document.getElementById('userInput').focus();
+    }
+  }
+
+  function renderWelcome() {
+    const noteCount = window.INTARA_VAULT?.noteCount || 47;
+    return `
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">💌</div>
+        <h2>Bienvenue, INTARA !</h2>
+        <p>Ton coffre de <strong>${noteCount} notes Obsidian</strong> (et ses connexions Smart Connections) est chargé. Pose ta question 💖</p>
+        <div class="suggestions">
+          <button class="suggestion-chip" onclick="useSuggestion(this)">✨ Quelles sont nos idées business pour les parents ?</button>
+          <button class="suggestion-chip" onclick="useSuggestion(this)">💖 Comment assembler une offre irrésistible ?</button>
+          <button class="suggestion-chip" onclick="useSuggestion(this)">📘 Résume-moi les préceptes des livres de spiritualité</button>
+          <button class="suggestion-chip" onclick="useSuggestion(this)">🌱 Parle-moi de l'accompagnement d'âmes</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderActiveConversation() {
+    const div = document.getElementById('messages');
+    const conv = getActiveConversation();
+    if (!conv || conv.messages.length === 0) {
+      div.innerHTML = renderWelcome();
+      updateActiveConvBar();
+      return;
+    }
+    div.innerHTML = '';
+    conv.messages.forEach(m => {
+      appendMessageDOM(m.role, m.content, m.source);
+    });
+    updateActiveConvBar();
+    div.scrollTop = div.scrollHeight;
+  }
+
+  function startNewConversation() {
+    if (isGenerating) return;
+    const current = getActiveConversation();
+    if (current && current.messages.length === 0) {
+      switchTab('chat');
+      document.getElementById('userInput').focus();
+      return;
+    }
+    activeConvId = null;
+    localStorage.removeItem(STORAGE_ACTIVE_ID);
+    renderActiveConversation();
+    switchTab('chat');
+    showToast('✨ Nouvelle discussion prête !');
+  }
+
+  function selectConversation(id) {
+    if (isGenerating) return;
+    activeConvId = id;
+    saveConversations();
+    renderActiveConversation();
+    switchTab('chat');
+  }
+
+  function togglePinConversation(id, event) {
+    if (event) event.stopPropagation();
+    const conv = conversations.find(c => c.id === id);
+    if (!conv) return;
+    conv.pinned = !conv.pinned;
+    saveConversations();
+    renderHistory();
+    showToast(conv.pinned ? '📌 Conversation épinglée !' : '📌 Conversation désépinglée');
+  }
+
+  function togglePinActive() {
+    if (!activeConvId) return;
+    togglePinConversation(activeConvId);
+  }
+
+  function startInlineRename(id, event) {
+    if (event) event.stopPropagation();
+    renamingConvId = id;
+    renderHistory();
+    setTimeout(() => {
+      const input = document.getElementById('renameInput-' + id);
+      if (input) { input.focus(); input.select(); }
+    }, 20);
+  }
+
+  function finishInlineRename(id, event) {
+    if (event) event.stopPropagation();
+    const input = document.getElementById('renameInput-' + id);
+    if (!input) return;
+    const newTitle = input.value.trim();
+    const conv = conversations.find(c => c.id === id);
+    if (conv && newTitle) {
+      conv.title = newTitle;
+      saveConversations();
+      showToast('✏️ Conversation renommée !');
+    }
+    renamingConvId = null;
+    renderHistory();
+  }
+
+  function cancelInlineRename(event) {
+    if (event) event.stopPropagation();
+    renamingConvId = null;
+    renderHistory();
+  }
+
+  function promptRenameActive() {
+    const conv = getActiveConversation();
+    if (!conv) return;
+    const next = prompt('Nouveau nom de la conversation :', conv.title);
+    if (next && next.trim()) {
+      conv.title = next.trim();
+      saveConversations();
+      renderHistory();
+      showToast('✏️ Conversation renommée !');
+    }
+  }
+
+  function deleteConversation(id, event) {
+    if (event) event.stopPropagation();
+    const conv = conversations.find(c => c.id === id);
+    if (!conv) return;
+    if (!confirm(`Supprimer la conversation « ${conv.title} » ?`)) return;
+
+    conversations = conversations.filter(c => c.id !== id);
+    if (activeConvId === id) {
+      activeConvId = conversations[0]?.id || null;
+      renderActiveConversation();
+    }
+    saveConversations();
+    renderHistory();
+    showToast('🗑️ Conversation supprimée');
+  }
+
+  function deleteActiveConversation() {
+    if (!activeConvId) return;
+    deleteConversation(activeConvId);
+  }
+
+  function formatDate(ts) {
+    try {
+      const d = new Date(ts);
+      return d.toLocaleDateString('fr-FR', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+      });
+    } catch { return ''; }
+  }
+
+  function sortConversations(list, sortMode) {
+    return [...list].sort((a, b) => {
+      if (sortMode === 'oldest') return (a.updatedAt || 0) - (b.updatedAt || 0);
+      if (sortMode === 'az') return (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
+      if (sortMode === 'za') return (b.title || '').localeCompare(a.title || '', 'fr', { sensitivity: 'base' });
+      if (sortMode === 'messages') return (b.messages?.length || 0) - (a.messages?.length || 0);
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    });
+  }
+
+  function escapeAttr(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderConvCard(conv) {
+    const isCurrent = conv.id === activeConvId;
+    const lastMsg = conv.messages && conv.messages.length
+      ? conv.messages[conv.messages.length - 1].content.replace(/\s+/g, ' ').slice(0, 80)
+      : 'Aucun message';
+    const msgCount = conv.messages?.length || 0;
+    const isRenaming = renamingConvId === conv.id;
+
+    return `
+      <div class="conv-card ${isCurrent ? 'current' : ''} ${conv.pinned ? 'pinned' : ''}"
+           onclick="selectConversation('${conv.id}')">
+        <div class="conv-icon">${conv.pinned ? '📌' : '💬'}</div>
+        <div class="conv-info">
+          <div class="conv-title-row">
+            ${isRenaming ? `
+              <input id="renameInput-${conv.id}" class="conv-rename-input"
+                value="${escapeAttr(conv.title)}"
+                onclick="event.stopPropagation()"
+                onkeydown="if(event.key==='Enter'){finishInlineRename('${conv.id}', event)}else if(event.key==='Escape'){cancelInlineRename(event)}" />
+            ` : `
+              <span class="conv-title">${escapeAttr(conv.title)}</span>
+              ${isCurrent ? '<span class="conv-badge-active">Active</span>' : ''}
+            `}
+          </div>
+          <div class="conv-preview">${escapeAttr(lastMsg)}</div>
+          <div class="conv-meta">
+            <span>🕒 ${formatDate(conv.updatedAt)}</span>
+            <span>💬 ${msgCount} message${msgCount > 1 ? 's' : ''}</span>
+          </div>
+        </div>
+        <div class="conv-actions" onclick="event.stopPropagation()">
+          ${isRenaming ? `
+            <button class="conv-action-btn" onclick="finishInlineRename('${conv.id}', event)" title="Valider">✔️</button>
+            <button class="conv-action-btn" onclick="cancelInlineRename(event)" title="Annuler">✖️</button>
+          ` : `
+            <button class="conv-action-btn ${conv.pinned ? 'pinned-active' : ''}"
+              onclick="togglePinConversation('${conv.id}', event)"
+              title="${conv.pinned ? 'Désépingler' : 'Épingler en haut'}">📌</button>
+            <button class="conv-action-btn"
+              onclick="startInlineRename('${conv.id}', event)"
+              title="Renommer">✏️</button>
+            <button class="conv-action-btn delete"
+              onclick="deleteConversation('${conv.id}', event)"
+              title="Supprimer">🗑️</button>
+          `}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderHistory() {
+    const container = document.getElementById('historyContainer');
+    const query = (document.getElementById('historySearch')?.value || '').trim().toLowerCase();
+    const sortMode = document.getElementById('historySort')?.value || 'recent';
+
+    const filtered = conversations.filter(c => {
+      if (!query) return true;
+      const inTitle = (c.title || '').toLowerCase().includes(query);
+      const inMsgs = (c.messages || []).some(m => (m.content || '').toLowerCase().includes(query));
+      return inTitle || inMsgs;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="history-empty">
+          <div class="history-empty-icon">🗂️</div>
+          <p><strong>${query ? 'Aucune conversation ne correspond à ta recherche.' : 'Aucune conversation enregistrée pour le moment.'}</strong></p>
+          <p style="font-size:13px; margin-top:6px;">Envoie un premier message dans l'onglet Discussion pour créer ton historique 💖</p>
+        </div>
+      `;
+      return;
+    }
+
+    const pinnedList = sortConversations(filtered.filter(c => c.pinned), sortMode);
+    const unpinnedList = sortConversations(filtered.filter(c => !c.pinned), sortMode);
+
+    let html = '';
+    if (pinnedList.length > 0) {
+      html += `<div class="history-section-label">📌 Conversations épinglées (${pinnedList.length})</div>`;
+      html += pinnedList.map(renderConvCard).join('');
+    }
+    if (unpinnedList.length > 0) {
+      if (pinnedList.length > 0) {
+        html += `<div class="history-section-label" style="margin-top:10px;">💬 Autres conversations (${unpinnedList.length})</div>`;
+      }
+      html += unpinnedList.map(renderConvCard).join('');
+    }
+
+    container.innerHTML = html;
+  }
+
+  // ---------- Moteur de Recherche RAG Hybride (Obsidian + Smart Connections) ----------
+  const FR_STOPWORDS = new Set([
+    'le','la','les','un','une','des','du','de','d','au','aux','et','ou','mais','donc','or','ni','car',
+    'je','tu','il','elle','on','nous','vous','ils','elles','me','te','se','moi','toi','lui','leur',
+    'ce','cet','cette','ces','mon','ton','son','ma','ta','sa','mes','tes','ses','notre','votre','nos','vos',
+    'qui','que','quoi','dont','ou','dans','sur','sous','avec','sans','pour','par','en','vers','chez',
+    'est','sont','etre','avoir','ai','as','a','avons','avez','ont','fait','faire','plus','moins','tres',
+    'comme','tout','tous','toute','toutes','meme','aussi','alors','apres','avant','comment','quand','pourquoi',
+    'quel','quelle','quels','quelles','est-ce','peux','peut','dire','donne','parle','explique','dis'
+  ]);
+
+  function normalizeFr(str) {
+    return String(str || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/['’]/g, ' ');
+  }
+
+  function tokenizeFr(str) {
+    return normalizeFr(str)
+      .split(/[^a-z0-9]+/)
+      .filter(w => w.length > 2 && !FR_STOPWORDS.has(w))
+      .map(w => w.replace(/(es|s|ent|er|ir|issante|issants|issant|ation|ations|ement|ements)$/, '') || w);
+  }
+
+  function searchObsidianVault(userQuery, topK = 6) {
+    const vault = window.INTARA_VAULT;
+    if (!vault || !Array.isArray(vault.chunks)) return { chunks: [], sources: [] };
+
+    const qNorm = normalizeFr(userQuery);
+    const qTokens = tokenizeFr(userQuery);
+    if (qTokens.length === 0) {
+      return { chunks: vault.chunks.slice(0, 4), sources: [vault.chunks[0]?.title].filter(Boolean) };
+    }
+
+    const noteBestScore = new Map();
+    const scored = vault.chunks.map((chunk, idx) => {
+      const titleNorm = normalizeFr(chunk.title);
+      const textNorm = normalizeFr(chunk.text);
+      let score = 0;
+
+      for (const tok of qTokens) {
+        if (titleNorm.includes(tok)) score += 6.0;
+        let pos = textNorm.indexOf(tok);
+        let occurrences = 0;
+        while (pos !== -1 && occurrences < 8) {
+          occurrences++;
+          pos = textNorm.indexOf(tok, pos + tok.length);
+        }
+        if (occurrences > 0) {
+          // Saturation type BM25
+          score += (occurrences * 2.5) / (occurrences + 1.2);
+        }
+      }
+
+      // Bonus expression exacte si plusieurs mots se suivent
+      if (qTokens.length >= 2 && textNorm.includes(qTokens.slice(0, 2).join(' '))) {
+        score += 4.0;
+      }
+
+      const prev = noteBestScore.get(chunk.noteId) || 0;
+      if (score > prev) noteBestScore.set(chunk.noteId, score);
+
+      return { chunk, score, idx };
+    });
+
+    // Propagation sémantique via les connexions Smart Connections (.smart-env)
+    const topNotes = [...noteBestScore.entries()]
+      .filter(([, s]) => s > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    const relatedBoost = new Map();
+    for (const [noteId, bestScore] of topNotes) {
+      const noteMeta = vault.notes?.[noteId];
+      if (noteMeta && Array.isArray(noteMeta.relatedIds)) {
+        for (const relId of noteMeta.relatedIds) {
+          relatedBoost.set(relId, Math.max(relatedBoost.get(relId) || 0, bestScore * 0.22));
+        }
+      }
+    }
+
+    for (const item of scored) {
+      if (item.score > 0 && relatedBoost.has(item.chunk.noteId)) {
+        item.score += relatedBoost.get(item.chunk.noteId);
+      }
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+    const selected = scored.filter(s => s.score > 1.5).slice(0, topK).map(s => s.chunk);
+    const uniqueTitles = [...new Set(selected.map(c => c.title))];
+
+    return { chunks: selected, sources: uniqueTitles };
+  }
+
+  // ---------- Configuration UI ----------
+  function isConfiguredReady() {
+    if (!config) return false;
+    const mode = config.engineMode || 'hybrid';
+    const hasLocal = Boolean(config.apiKey && config.workspace);
+    const hasCloud = Boolean(config.cloudApiKey && window.INTARA_VAULT);
+    if (mode === 'local') return hasLocal;
+    if (mode === 'cloud') return hasCloud;
+    return hasLocal || hasCloud;
+  }
+
+  function updateStatus() {
+    const dot = document.getElementById('statusDot');
+    const sub = document.getElementById('headerSubtitle');
+    const ready = isConfiguredReady();
+    dot.classList.toggle('disconnected', !ready);
+
+    const isUnlocked = Boolean(window.INTARA_VAULT);
+    const vaultNotes = window.INTARA_VAULT?.noteCount || window.INTARA_VAULT_ENCRYPTED?.noteCount || 47;
+    const vaultBadge = document.getElementById('vaultBadge');
+    if (vaultBadge) {
+      vaultBadge.textContent = isUnlocked ? `🔓 ${vaultNotes} notes` : `🔒 Coffre verrouillé`;
+      vaultBadge.title = isUnlocked
+        ? `Coffre déverrouillé (${vaultNotes} notes Obsidian protégées)`
+        : `Clique pour déverrouiller le coffre avec ton mot de passe secret`;
+    }
+
+    if (!ready) {
+      dot.title = 'En attente de configuration';
+      if (sub) sub.textContent = isUnlocked
+        ? 'Clique sur ⚙️ pour configurer ta clé IA'
+        : '🔒 Clique sur ⚙️ pour déverrouiller ton Coffre & activer l\'IA';
+      return;
+    }
+
+    const mode = config.engineMode || 'hybrid';
+    if (mode === 'cloud') {
+      const pName = CLOUD_PROVIDERS[config.cloudProvider]?.name || 'IA Cloud';
+      dot.title = `Actif 24h/24 (${pName} + ${vaultNotes} notes Obsidian déverrouillées)`;
+      if (sub) sub.textContent = `☁️ Actif 24h/24 (PC éteint OK · ${pName})`;
+    } else if (mode === 'local') {
+      dot.title = `Local AnythingLLM (${config.workspaceName || config.workspace})`;
+      if (sub) sub.textContent = `💻 Mode Local (${config.workspaceName || config.workspace})`;
+    } else {
+      dot.title = 'Mode Hybride Auto (Local AnythingLLM + Secours Cloud 24h/24)';
+      if (sub) sub.textContent = '🔄 Hybride Auto (Local + Secours Cloud 24h/24)';
+    }
+  }
+
+  function onCloudProviderChange() {
+    const prov = document.getElementById('cloudProvider').value;
+    const info = CLOUD_PROVIDERS[prov];
+    if (info) {
+      document.getElementById('cloudModel').value = info.defaultModel;
+      const link = document.getElementById('cloudKeyHelpLink');
+      if (link) link.href = info.helpUrl;
+    }
+    updateSaveBtnState();
+  }
+
+  function updateConfigUI() {
+    const mode = document.getElementById('engineMode').value;
+    document.getElementById('cloudConfigSection').style.display = (mode === 'local') ? 'none' : 'block';
+    document.getElementById('localConfigSection').style.display = (mode === 'cloud') ? 'none' : 'block';
+    updateSaveBtnState();
+  }
+
+  function updateSaveBtnState() {
+    const mode = document.getElementById('engineMode').value;
+    const hasCloudKey = Boolean(document.getElementById('cloudApiKey').value.trim());
+    const hasVaultPwd = Boolean(window.INTARA_VAULT || document.getElementById('vaultPasswordInput').value.trim());
+    const hasLocalWs = Boolean(document.getElementById('apiKey').value.trim() && document.getElementById('workspace').value.trim());
+    const saveBtn = document.getElementById('saveConfigBtn');
+    if (mode === 'cloud') {
+      saveBtn.disabled = !(hasCloudKey && hasVaultPwd);
+    } else if (mode === 'local') {
+      saveBtn.disabled = !hasLocalWs;
+    } else {
+      saveBtn.disabled = !((hasCloudKey && hasVaultPwd) || hasLocalWs);
+    }
+  }
+
+  function showConfig() {
+    document.getElementById('engineMode').value = config?.engineMode || 'hybrid';
+    document.getElementById('cloudProvider').value = config?.cloudProvider || 'groq';
+    document.getElementById('cloudModel').value = config?.cloudModel || CLOUD_PROVIDERS[config?.cloudProvider || 'groq'].defaultModel;
+    document.getElementById('cloudApiKey').value = config?.cloudApiKey || '';
+    document.getElementById('vaultPasswordInput').value = localStorage.getItem(STORAGE_VAULT_PWD) || '';
+    document.getElementById('serverUrl').value = config?.serverUrl || 'http://localhost:3001';
+    document.getElementById('apiKey').value = config?.apiKey || '';
+    document.getElementById('chatMode').value = config?.mode || 'query';
+
+    const unlockStatus = document.getElementById('vaultUnlockStatus');
+    if (unlockStatus) {
+      if (window.INTARA_VAULT) {
+        unlockStatus.style.display = 'block';
+        unlockStatus.style.color = '#2e7d32';
+        unlockStatus.textContent = `🔓 Coffre déverrouillé (${window.INTARA_VAULT.noteCount} notes prêtes)`;
+      } else {
+        unlockStatus.style.display = 'none';
+      }
+    }
+
+    const link = document.getElementById('cloudKeyHelpLink');
+    if (link) link.href = CLOUD_PROVIDERS[document.getElementById('cloudProvider').value]?.helpUrl || 'https://console.groq.com/keys';
+
+    const statusEl = document.getElementById('connectStatus');
+    statusEl.style.display = 'none';
+    updateConfigUI();
+    document.getElementById('configModal').style.display = 'flex';
+
+    if (config?.apiKey && document.getElementById('engineMode').value !== 'cloud') {
+      fetchWorkspaces(true);
+    }
+  }
+
+  function hideConfig() { document.getElementById('configModal').style.display = 'none'; }
+
+  async function fetchWorkspaces(silent = false) {
+    const baseUrl = (document.getElementById('serverUrl').value.trim().replace(/\/+$/, '') || 'http://localhost:3001');
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const statusEl = document.getElementById('connectStatus');
+    const selectEl = document.getElementById('workspace');
+
+    if (!apiKey) {
+      if (!silent) {
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#c2185b';
+        statusEl.textContent = '⚠️ Entre d\'abord ta clé API AnythingLLM.';
+      }
+      return;
+    }
+
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--text-mid)';
+    statusEl.textContent = '⏳ Connexion à AnythingLLM…';
+
+    try {
+      const resp = await fetch(`${baseUrl}/api/v1/workspaces`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+
+      if (!resp.ok) {
+        throw new Error(resp.status === 401 || resp.status === 403 ? 'cle' : 'http');
+      }
+
+      const data = await resp.json();
+      const list = data?.workspaces || [];
+
+      selectEl.innerHTML = '';
+      if (!list.length) {
+        throw new Error('vide');
+      }
+
+      list.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.slug;
+        opt.textContent = w.name;
+        selectEl.appendChild(opt);
+      });
+
+      if (config?.workspace && list.some(w => w.slug === config.workspace)) {
+        selectEl.value = config.workspace;
+      }
+
+      selectEl.disabled = false;
+      updateSaveBtnState();
+      statusEl.style.color = '#2e7d32';
+      statusEl.textContent = '✅ Connecté à AnythingLLM !';
+    } catch (err) {
+      selectEl.disabled = true;
+      updateSaveBtnState();
+      statusEl.style.color = '#c2185b';
+      if (err.message === 'cle') {
+        statusEl.textContent = '❌ Clé API AnythingLLM refusée.';
+      } else if (err.message === 'vide') {
+        statusEl.textContent = '⚠️ Aucun espace de travail trouvé dans AnythingLLM.';
+      } else {
+        statusEl.textContent = 'ℹ️ AnythingLLM local non détecté (tu peux utiliser le Mode 24h/24 Cloud ci-dessus).';
+      }
+    }
+  }
+
+  function saveConfig() {
+    const engineMode = document.getElementById('engineMode').value;
+    const selectEl = document.getElementById('workspace');
+    const workspaceSlug = selectEl.value.trim();
+    const pwdInput = document.getElementById('vaultPasswordInput').value.trim();
+    const unlockStatus = document.getElementById('vaultUnlockStatus');
+
+    if (engineMode !== 'local' && !window.INTARA_VAULT) {
+      if (!tryUnlockVaultWithPassword(pwdInput)) {
+        if (unlockStatus) {
+          unlockStatus.style.display = 'block';
+          unlockStatus.style.color = '#c2185b';
+          unlockStatus.textContent = '❌ Mot de passe du coffre incorrect. Vérifie le mot de passe secret.';
+        }
+        showToast('❌ Mot de passe du coffre incorrect');
+        return;
+      }
+    }
+
+    config = {
+      engineMode,
+      cloudProvider: document.getElementById('cloudProvider').value || 'groq',
+      cloudModel: document.getElementById('cloudModel').value.trim() || 'llama-3.3-70b-versatile',
+      cloudApiKey: document.getElementById('cloudApiKey').value.trim(),
+      serverUrl: document.getElementById('serverUrl').value.trim().replace(/\/+$/, '') || 'http://localhost:3001',
+      apiKey: document.getElementById('apiKey').value.trim(),
+      workspace: workspaceSlug || config?.workspace || '',
+      workspaceName: (!selectEl.disabled && selectEl.options[selectEl.selectedIndex]?.text) || config?.workspaceName || workspaceSlug,
+      mode: document.getElementById('chatMode').value || 'query',
+    };
+    saveConfigToStorage();
+    updateStatus();
+    renderActiveConversation();
+    hideConfig();
+    showToast('💖 Configuration sauvegardée & Coffre déverrouillé !');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function formatText(text) {
+    let cleaned = text.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim();
+    cleaned = cleaned.replace(/\[\[([^\]|]+)(\|([^\]]+))?\]\]/g, (_, a, __, b) => b || a);
+    let h = cleaned.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    h = h.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+    h = h.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    h = h.replace(/\n/g, '<br>');
+    return h;
+  }
+
+  function appendMessageDOM(role, content, sourceTitle = null) {
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.remove();
+    const div = document.getElementById('messages');
+    const wrapper = document.createElement('div');
+    wrapper.className = `message ${role}`;
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    avatar.textContent = role === 'user' ? '👩' : '🤖';
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.innerHTML = formatText(content);
+    if (sourceTitle) {
+      const sourceEl = document.createElement('div');
+      sourceEl.style.cssText = 'margin-top:8px; padding-top:6px; border-top:1px solid rgba(244,143,177,0.25); font-size:12px; color:var(--text-light);';
+      sourceEl.textContent = '📄 Source : ' + sourceTitle;
+      bubble.appendChild(sourceEl);
+    }
+    wrapper.appendChild(avatar); wrapper.appendChild(bubble);
+    div.appendChild(wrapper);
+    div.scrollTop = div.scrollHeight;
+    return bubble;
+  }
+
+  function addTyping() {
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.remove();
+    const div = document.getElementById('messages');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message assistant'; wrapper.id = 'typingIndicator';
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar'; avatar.textContent = '🤖';
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble typing';
+    bubble.innerHTML = '<span></span><span></span><span></span>';
+    wrapper.appendChild(avatar); wrapper.appendChild(bubble);
+    div.appendChild(wrapper);
+    div.scrollTop = div.scrollHeight;
+    return bubble;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  function useSuggestion(btn) {
+    const raw = btn.textContent.trim().replace(/^[^\wÀ-ÿ]+/, '');
+    document.getElementById('userInput').value = raw;
+    sendMessage();
+  }
+
+  // Appel AnythingLLM Local (Streaming)
+  async function askLocalAnythingLLM(text, convId, bubble, messagesDiv) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+    const resp = await fetch(`${config.serverUrl}/api/v1/workspace/${encodeURIComponent(config.workspace)}/stream-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        message: text,
+        mode: config.mode || 'query',
+        sessionId: convId,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!resp.ok || !resp.body) {
+      const err = await resp.text().catch(() => '');
+      throw new Error(`Erreur AnythingLLM (${resp.status}): ${err}`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+    let sources = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop();
+
+      for (const block of parts) {
+        const line = block.replace(/^data:\s*/, '').trim();
+        if (!line) continue;
+        let data;
+        try { data = JSON.parse(line); } catch { continue; }
+        if (data.error) throw new Error(data.error);
+        if (data.textResponse) fullText += data.textResponse;
+        if (data.sources && data.sources.length) sources = data.sources;
+
+        const cleaned = fullText.replace(/<think>[\s\S]*?(<\/think>|$)/g, '');
+        if (cleaned) {
+          bubble.classList.remove('typing');
+          bubble.innerHTML = formatText(cleaned);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+      }
+    }
+
+    const finalClean = fullText.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim();
+    const sourceTitle = (sources.length && !finalClean.startsWith('Je ne trouve pas'))
+      ? (sources[0].title || 'Documents du workspace')
+      : null;
+
+    return { reply: finalClean, sourceTitle };
+  }
+
+  // Appel Cloud Autonome 24h/24 avec le Coffre Obsidian embarqué
+  async function askAutonomousCloud(text, conv, bubble, messagesDiv) {
+    const vault = window.INTARA_VAULT;
+    const refusal = vault?.refusalMessage ||
+      "Je ne trouve pas cette information dans nos documents. Contacte ANTIRIM et voyez ensemble comment vous pouvez enrichir ton coffre de connaissances.";
+
+    const { chunks, sources } = searchObsidianVault(text, 6);
+    if (!chunks.length) {
+      return { reply: refusal, sourceTitle: null };
+    }
+
+    const contextBlock = chunks.map((c, i) =>
+      `--- DOCUMENT ${i + 1} : ${c.title} ---\n${c.text}`
+    ).join('\n\n');
+
+    const systemPrompt = (vault?.systemPrompt || '') +
+      `\n\nVoici les extraits pertinents du coffre Obsidian de INTARA pour répondre à la question :\n\n${contextBlock}`;
+
+    const provInfo = CLOUD_PROVIDERS[config.cloudProvider || 'groq'] || CLOUD_PROVIDERS.groq;
+    const historyMsgs = (conv.messages || []).slice(-8, -1).map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.content
+    }));
+
+    const resp = await fetch(`${provInfo.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.cloudApiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.cloudModel || provInfo.defaultModel,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...historyMsgs,
+          { role: 'user', content: text }
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`Erreur Cloud (${resp.status}) : ${errText.slice(0, 180)}`);
+    }
+
+    const data = await resp.json();
+    const rawReply = data?.choices?.[0]?.message?.content || '';
+    const finalClean = rawReply.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim() || refusal;
+    const isRefusal = finalClean.startsWith('Je ne trouve pas');
+    const sourceTitle = (!isRefusal && sources.length)
+      ? sources.slice(0, 3).join(' · ') + ' (Coffre Obsidian 24h/24)'
+      : null;
+
+    return { reply: finalClean, sourceTitle };
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text || isGenerating) return;
+
+    if (!isConfiguredReady()) {
+      showToast('⚠️ Configure ton mode 24h/24 ou Local dans ⚙️');
+      showConfig();
+      return;
+    }
+
+    input.value = ''; input.style.height = 'auto';
+    isGenerating = true;
+    document.getElementById('sendBtn').disabled = true;
+
+    let conv = getActiveConversation();
+    if (!conv) {
+      conv = createConversation(text);
+    } else if (conv.messages.length === 0 && conv.title === 'Nouvelle conversation') {
+      conv.title = text.replace(/^[^\wÀ-ÿ]+/, '').slice(0, 42) + (text.length > 42 ? '…' : '');
+    }
+
+    conv.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+    conv.updatedAt = Date.now();
+    saveConversations();
+
+    appendMessageDOM('user', text);
+    const bubble = addTyping();
+    const messagesDiv = document.getElementById('messages');
+
+    try {
+      const mode = config.engineMode || 'hybrid';
+      let result = null;
+
+      if (mode === 'local') {
+        result = await askLocalAnythingLLM(text, conv.id, bubble, messagesDiv);
+      } else if (mode === 'cloud') {
+        result = await askAutonomousCloud(text, conv, bubble, messagesDiv);
+      } else {
+        // Mode Hybride : tente AnythingLLM local s'il est configuré, sinon bascule automatiquement sur le Cloud 24h/24
+        if (config.apiKey && config.workspace) {
+          try {
+            result = await askLocalAnythingLLM(text, conv.id, bubble, messagesDiv);
+          } catch (localErr) {
+            if (config.cloudApiKey) {
+              showToast('☁️ PC local éteint/indisponible : bascule sur le Coffre 24h/24');
+              result = await askAutonomousCloud(text, conv, bubble, messagesDiv);
+            } else {
+              throw localErr;
+            }
+          }
+        } else {
+          result = await askAutonomousCloud(text, conv, bubble, messagesDiv);
+        }
+      }
+
+      bubble.classList.remove('typing');
+      bubble.removeAttribute('id');
+      if (bubble.parentElement) bubble.parentElement.removeAttribute('id');
+
+      const assistantReply = result?.reply || "Désolée, je n'ai pas reçu de réponse... 💔";
+      const sourceTitle = result?.sourceTitle || null;
+
+      bubble.innerHTML = formatText(assistantReply);
+      if (sourceTitle) {
+        const sourceEl = document.createElement('div');
+        sourceEl.style.cssText = 'margin-top:8px; padding-top:6px; border-top:1px solid rgba(244,143,177,0.25); font-size:12px; color:var(--text-light);';
+        sourceEl.textContent = '📄 Source : ' + sourceTitle;
+        bubble.appendChild(sourceEl);
+      }
+
+      conv.messages.push({
+        role: 'assistant',
+        content: assistantReply,
+        source: sourceTitle,
+        timestamp: Date.now()
+      });
+      conv.updatedAt = Date.now();
+      saveConversations();
+    } catch (err) {
+      removeTyping();
+      const errMsg = `⚠️ Oups ! ${err.message}\n\nVérifie ta configuration dans ⚙️.`;
+      appendMessageDOM('assistant', errMsg);
+      conv.messages.push({ role: 'assistant', content: errMsg, timestamp: Date.now() });
+      conv.updatedAt = Date.now();
+      saveConversations();
+    }
+
+    isGenerating = false;
+    document.getElementById('sendBtn').disabled = false;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    document.getElementById('userInput').focus();
+  }
+
+  // Initialisation au chargement : déverrouillage automatique si mot de passe déjà enregistré sur cet appareil
+  const savedVaultPwd = localStorage.getItem(STORAGE_VAULT_PWD);
+  if (savedVaultPwd) {
+    tryUnlockVaultWithPassword(savedVaultPwd);
+  }
+  updateStatus();
+  if (activeConvId && !conversations.some(c => c.id === activeConvId)) {
+    activeConvId = conversations[0]?.id || null;
+  }
+  updateHistoryBadge();
+  renderActiveConversation();
+</script>
+</body>
+</html>
